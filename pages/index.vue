@@ -22,7 +22,6 @@
 
           <v-col cols="12" lg="6">
             <v-menu
-              v-model="menu2"
               :close-on-content-click="false"
               transition="scale-transition"
               offset-y
@@ -31,28 +30,19 @@
             >
               <template v-slot:activator="{ on }">
                 <v-text-field
-                  v-model="dates"
                   label="Date range"
-                  persistent-hint
                   readonly
-                  range
                   v-on="on"
+                  v-model="dates"
                 ></v-text-field>
               </template>
-              <v-date-picker v-model="dates" no-title @input="menu2 = false"></v-date-picker>
+              <v-date-picker range v-model="dates" no-title></v-date-picker>
             </v-menu>
           </v-col>
         </v-row>
       </v-container>
 
       <v-row align="center">
-        <!-- <v-col class="d-flex" cols="12" sm="3">
-        <v-date-picker v-model="date"></v-date-picker>
-      </v-col>
-      <v-col class="d-flex" cols="12" sm="3">
-        <v-date-picker v-model="dates" range></v-date-picker>
-        </v-col>-->
-
         <v-col class="d-flex" cols="12" sm="6">
           <v-text-field
             v-model="search"
@@ -64,7 +54,7 @@
         </v-col>
 
         <v-col class="d-flex" id="select" cols="12" sm="6">
-          <v-select :items="selectlist" v-model="state" filled label="Filled style"></v-select>
+          <v-select :items="selectlist" v-model="state" filled label="State"></v-select>
         </v-col>
       </v-row>
 
@@ -84,11 +74,13 @@
 export default {
   data() {
     return {
+      menu1:'',
+      menu2:'',
       search: "",
-      dates: ["2019-09-10", "2021-09-10"],
+      dates: [],
       date: "",
       state: "",
-      selectlist: ["","completed", "waitinglist", "enrolled"],
+      selectlist: ["completed", "waitinglist", "enrolled"],
       headers: [
         {
           text: "firstname",
@@ -98,7 +90,18 @@ export default {
           filterable: false
         },
         { text: "LastName", value: "lastname", filterable: false },
-        { text: "Email", value: "email", filterable: true },
+        { 
+          text: "Email", value: "email", filter: (value,search,item) => {
+            // return value != null &&
+            // search != null &&
+            // typeof value === 'string' &&
+            // value.toString().toLocaleUpperCase().indexOf(search) !== -1
+            if(!this.search) return true
+            else if(this.search){
+                return value == this.search
+            }
+          }
+          },
         {
           text: "state",
           value: "state",
@@ -112,14 +115,24 @@ export default {
           text: "created",
           value: "created",
           filter: value => {
-            if (!this.date || this.dates.lnegth == 0) return true;
-            else if (this.date) {
-              return value > this.date;
-            } else if (this.dates) {
-              return value > this.dates[0] && value < this.dates[1];
-            }
 
-            //console.log(this.dates)
+            if(this.dates.length==0) return true
+            else if(this.dates.length>0){
+              return value> this.dates[0] && value<this.dates[1]
+            }
+            
+          }
+        },
+        {
+          text: "birthdate",
+          value: "birthdate",
+          filter: value => {
+         
+            if(!this.date) return true
+            else if(this.date){
+                return value == this.date
+            }
+           
           }
         }
       ],
@@ -128,7 +141,6 @@ export default {
   },
   created() {
     return fetch("http://localhost:3000/users")
-    // return fetch("db.json")
       .then(res => res.json())
       .then(rs => {
         return (this.items = rs);
